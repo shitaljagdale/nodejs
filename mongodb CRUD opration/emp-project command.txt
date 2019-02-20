@@ -1,0 +1,120 @@
+db.project.insertMany(
+    [
+       {
+            projectid:1,
+            projectname:"project1",
+            domain:"IOT"
+       },
+       {
+            projectid:2,
+            projectname:"project2",
+            domain:"FSD"
+       },
+       {
+            projectid:3,
+            projectname:"project3",
+            domain:"BFSI"
+       },
+        {
+            projectid:4,
+            projectname:"project4",
+            domain:"SAP"
+       }
+    ]
+)
+
+//project1 emp
+db.project.aggregate([
+    {
+        $lookup:{
+            from: "employees",
+            localField: "projectid",
+            foreignField: "projectid",
+            as : "All employees in projects"
+        }
+    }
+]);
+
+db.EmpEithProject.insertMany(
+    [
+        {
+            projectid:1,
+            projectname:"project1",
+            domain:"FSD",
+            employees:[
+                {
+                    id:1,
+                    name:"shital",
+                    salary:5000
+                },
+                {
+                    id:2,
+                    name:"Jhon",
+                    salary:10000
+                },
+                {
+                    id:3,
+                    name:"Max",
+                    salary:15000
+                }
+            ]
+        },
+        {
+            projectid:2,
+            projectname:"project2",
+            domain:"IOT",
+            employees:[
+                {
+                    id:4,
+                    name:"Bob",
+                    salary:3000
+                },
+                {
+                    id:5,
+                    name:"manish",
+                    salary:14000
+                },
+                {
+                    id:6,
+                    name:"Manu",
+                    salary:9000
+                }
+            ]
+        },
+        {
+            projectid:3,
+            projectname:"project3",
+            domain:"BFSI",
+            employees:[
+                {
+                    id:7,
+                    name:"Meera",
+                    salary:23000
+                },
+                {
+                    id:8,
+                    name:"sakshi",
+                    salary:13000
+                },
+                {
+                    id:9,
+                    name:"Manisha",
+                    salary:15000
+                }
+            ]
+        }
+    ]
+)
+
+//project wise total investment
+db.EmpEithProject.aggregate([{
+        $unwind: "$employees" 
+        },
+        {
+           $group:
+           {_id:"$projectid",Investment:{$sum:"$employees.salary"}}
+        }
+        
+]).pretty()
+
+

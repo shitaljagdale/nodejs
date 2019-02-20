@@ -1,0 +1,358 @@
+//Companies
+db.company.insertMany(
+    [
+        {
+            id:101,
+            companyName:"IBM"
+        },
+        {
+            id:102,
+            companyName:"CTS"
+        },
+        {
+            id:103,
+            companyName:"WIPRO"
+        }
+    ]
+)
+/Project Eith Employees
+
+db.ProjectWithEmp.insertMany(
+    [
+        {
+            projectid:1,
+            projectname:"ATT",
+            companies:[101,102],
+            employees:[
+                {
+                    id:1,
+                    name:"Meera",
+                    salary:23000,
+                    designation:'developer',
+                    companyName:"IBM"
+
+                },
+                {
+                    id:2,
+                    name:"shital",
+                    salary:13000,
+                    designation:'developer',
+                    companyName:"IBM"
+                },
+                 {
+                    id:3,
+                    name:"max",
+                    salary:40000,
+                    designation:'manager',
+                   companyName:"CTC"
+
+                },
+                {
+                    id:4,
+                    name:"mina",
+                    salary:15000,
+                    designation:'developer',
+                   companyName:"CTC"
+                },
+               
+            ]
+        },
+        {
+            projectid:2,
+            projectname:"TMobile",
+            companies:[3],
+            
+            employees:[
+                {
+                    id:5,
+                    name:"Kunal",
+                    salary:20000,
+                    designation:'developer',
+                    companyName:"WIPRO"
+
+                },
+                {
+                    id:6,
+                    name:"manisha",
+                    salary:50000,
+                    designation:'manager',
+                     companyName:"WIPRO"
+                }
+           ]
+        },
+        {
+            projectid:3,
+            projectname:"Volvo",
+            companies:[102,103],
+            
+            employees:[
+                {
+                    id:7,
+                    name:"monika",
+                    salary:25000,
+                    designation:'manager',
+                     companyName:"CTC"
+
+                },
+                {
+                    id:8,
+                    name:"geeta",
+                    salary:19000,
+                    designation:'developer',
+                     companyName:"CTC"
+                },
+                 {
+                    id:9,
+                    name:"nisha",
+                    salary:40000,
+                    designation:'developer',
+                     companyName:"WIPRO"
+
+                },
+                {
+                    id:10,
+                    name:"divya",
+                    salary:60000,
+                    designation:'developer',
+                     companyName:"WIPRO"
+                }
+               
+            ]
+        }
+    ]
+)
+
+/1>project wise total investment
+db.ProjectWithEmp.aggregate([{
+        $unwind: "$employees" 
+        },
+        {
+           $group:
+           {_id:"$projectid",Investment:{$sum:"$employees.salary"}}
+        }
+        
+]).pretty()
+
+
+//2>investment by company
+db.company.aggregate([
+    {
+        $lookup:{
+            from: "ProjectWithEmp",
+            localField: "id",
+            foreignField: "companies",
+            as : "categories"
+        }
+    },
+    {
+        $unwind: "$categories"
+    },
+    {
+        $unwind: "$categories.employees"
+    }
+    ,{
+        $group:{
+            _id: "$companyName",
+            "Investment":{
+                $sum: "$categories.employees.salary"
+            }
+        }
+    }
+]);
+
+
+//3>Highest salary in projects
+db.ProjectWithEmp.aggregate([{
+        $unwind: "$employees" 
+        },
+        {
+           $group: {
+               _id:"$projectname",
+               MaxSalary:{$max:"$employees.salary"},
+               data:{$push:{
+                   ename:"$employees.name"
+               }}
+               
+               }
+        },
+        {
+            $project:{
+                name:{$arrayElemAt:["$data.ename",0]},
+                sal:"$MaxSalary"
+            }
+        }
+        
+]).pretty()
+
+//4>Highest sal in company with name
+db.company.aggregate([
+    {
+        $lookup:{
+            from: "ProjectWithEmp",
+            localField: "id",
+            foreignField: "companies",
+            as : "categories"
+        }
+    },
+    {
+        $unwind: "$categories"
+    },
+    {
+        $unwind: "$categories.employees"
+    }
+    ,{
+        $group:{
+            _id: "$companyName",
+            "Highest salry in company":{
+                $max: "$categories.employees.salary"
+            },
+            data:{$push:{
+                   ename:"$categories.employees.name"
+               }}
+        }
+    },
+    {
+            $project:{
+                name:{$arrayElemAt:["$data.ename",0]},
+                sal:"$Highest salry in company"
+            }
+        }
+]);
+
+
+
+//4>Highest sal in company
+db.company.aggregate([
+    {
+        $lookup:{
+            from: "ProjectWithEmp",
+            localField: "id",
+            foreignField: "companies",
+            as : "categories"
+        }
+    },
+    {
+        $unwind: "$categories"
+    },
+    {
+        $unwind: "$categories.employees"
+    }
+    ,{
+        $group:{
+            _id: "$companyName",
+            "Highest salry in company":{
+                $max: "$categories.employees.salary"
+            }
+        }
+    }
+]);
+//5>lowest sal in company
+db.company.aggregate([
+    {
+        $lookup:{
+            from: "ProjectWithEmp",
+            localField: "id",
+            foreignField: "companies",
+            as : "categories"
+        }
+    },
+    {
+        $unwind: "$categories"
+    },
+    {
+        $unwind: "$categories.employees"
+    }
+    ,{
+        $group:{
+            _id: "$companyName",
+            "Lowest salry in company":{
+                $min: "$categories.employees.salary"
+            },
+            data:{$push:{
+                   ename:"$categories.employees.name"
+               }}
+        }
+    },
+    {
+            $project:{
+                name:{$arrayElemAt:["$data.ename",0]},
+                sal:"$Lowest salry in company"
+            }
+        }
+]);
+
+
+//5> lowest salary in company with name of emp (not working)
+db.ProjectWithEmp.aggregate(
+    [
+        {
+            $unwind:"$employees"
+        },
+        {
+            $match:{
+                "employees.companyName":"IBM"
+            }
+        },
+        {
+            $group:
+            {
+            _id:0,
+            "MinSal":
+            {
+                $min:"$employees.salary"
+            },
+            data:{$push:{
+               ename:"$employees.name"
+            }}
+        }
+        },
+        {
+            $project:{
+                name:{$arrayElemAt:["$data.ename",0]},
+                Sal:"$MinSal"
+            }
+        }
+    ]
+)
+//6>lowest salary in projects
+db.ProjectWithEmp.aggregate([{
+        $unwind: "$employees" 
+        },
+        {
+           $group:
+           {_id:"$projectname",LowestSalary:{$min:"$employees.salary"}}
+        }
+        
+]).pretty()
+//7>developer in a project
+
+db.ProjectWithEmp.aggregate([
+    {
+        $unwind: "$employees"
+    },
+    {
+    $match:{
+             "employees.designation":"developer"
+             }
+    }])
+
+8>//number of managers  in project
+
+db.ProjectWithEmp.aggregate([
+    {
+        $unwind: "$employees"
+    },
+    {
+    $match:{
+             "employees.designation":"manager"
+             }
+    },
+    {
+    $group:{
+        _id:0,
+        "number of manager":{$sum:1}
+    }
+    }
+])
+
+
